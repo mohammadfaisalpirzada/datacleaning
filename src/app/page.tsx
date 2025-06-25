@@ -17,7 +17,7 @@ export default function Home() {
 
   useEffect(() => {
     const fetchExcel = async () => {
-      const res = await fetch('/data/teachers.xlsx');
+      const res = await fetch('/data/staffdata.xlsx');
       const arrayBuffer = await res.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -102,8 +102,8 @@ export default function Home() {
           <div className="text-sm space-y-2">
             {Object.entries(details).map(([key, val], i) => (
               <div key={i} className="flex flex-col mb-1">
-                <span className="font-semibold text-gray-700">{key}</span>
-                <span className="text-gray-900">{val ? String(val) : 'N/A'}</span>
+                <span className="font-semibold text-blue-900">{key}</span>
+                <span className="text-black">{val ? String(val) : 'N/A'}</span>
               </div>
             ))}
           </div>
