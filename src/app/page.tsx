@@ -1,16 +1,46 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function StaffPage() {
   const [pid, setPid] = useState("");
+  const [staffList, setStaffList] = useState<string[]>([]);
+  const [selectedName, setSelectedName] = useState("");
   const [data, setData] = useState<any>(null);
   const [editData, setEditData] = useState<any>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [step, setStep] = useState<"select" | "pid" | "view">("select");
 
-  const handleSearch = async (e: React.FormEvent) => {
+  useEffect(() => {
+    // Fetch staff names on mount
+    fetch("/api/staffdata")
+      .then((res) => res.json())
+      .then((json) => {
+        const rows = json.data;
+        const header = rows[0];
+        const nameIndex = header.indexOf("Name of employee");
+        const names = rows
+          .slice(1)
+          .map((row: any) => row[nameIndex])
+          .filter(Boolean);
+        setStaffList(names);
+      });
+  }, []);
+
+  const handleNameSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedName(e.target.value);
+    setError("");
+    setSuccess("");
+    setPid("");
+    setData(null);
+    setEditData(null);
+    setEditMode(false);
+    if (e.target.value) setStep("pid");
+  };
+
+  const handlePidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -23,10 +53,14 @@ export default function StaffPage() {
       const json = await res.json();
       const rows = json.data;
       const header = rows[0];
+      const nameIndex = header.indexOf("Name of employee");
       const pidIndex = header.indexOf("PID");
-      const rowIndex = rows.findIndex((row: any) => row[pidIndex] === pid);
+      const rowIndex = rows.findIndex(
+        (row: any) =>
+          row[nameIndex] === selectedName && row[pidIndex] === pid
+      );
       if (rowIndex === -1) {
-        setError("PID not found.");
+        setError("PID does not match for selected name.");
         setLoading(false);
         return;
       }
@@ -35,6 +69,7 @@ export default function StaffPage() {
       header.forEach((col: string, i: number) => (rowObj[col] = row[i]));
       setData(rowObj);
       setEditData({ ...rowObj });
+      setStep("view");
     } catch (err) {
       setError("Failed to fetch data.");
     }
@@ -75,35 +110,64 @@ export default function StaffPage() {
         <h1 className="text-xl font-bold text-center mb-6 text-blue-900">
           Staff Data Lookup
         </h1>
-        <form
-          onSubmit={handleSearch}
-          className="mb-4 flex flex-col gap-2"
-        >
-          <label
-            htmlFor="pid"
-            className="font-semibold text-blue-900"
+        {step === "select" && (
+          <form className="mb-4 flex flex-col gap-2">
+            <label
+              htmlFor="staff-select"
+              className="font-semibold text-blue-900"
+            >
+              Select Staff Name
+            </label>
+            <select
+              id="staff-select"
+              className="border px-3 py-2 rounded"
+              value={selectedName}
+              onChange={handleNameSelect}
+            >
+              <option value="">Select Staff Name</option>
+              {staffList.map((name, i) => (
+                <option key={i} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </form>
+        )}
+        {step === "pid" && (
+          <form
+            onSubmit={handlePidSubmit}
+            className="mb-4 flex flex-col gap-2"
           >
-            Enter your PID
-          </label>
-          <input
-            id="pid"
-            type="text"
-            className="border px-3 py-2 rounded"
-            value={pid}
-            onChange={(e) => setPid(e.target.value)}
-            required
-          />
-          <button
-            type="submit"
-            className="bg-blue-700 text-white py-2 rounded mt-2"
-            disabled={loading}
-          >
-            {loading ? "Searching..." : "View My Data"}
-          </button>
-        </form>
+            <label htmlFor="pid" className="font-semibold text-blue-900">
+              Enter your PID
+            </label>
+            <input
+              id="pid"
+              type="text"
+              className="border px-3 py-2 rounded"
+              value={pid}
+              onChange={(e) => setPid(e.target.value)}
+              required
+            />
+            <button
+              type="submit"
+              className="bg-blue-700 text-white py-2 rounded mt-2"
+              disabled={loading}
+            >
+              {loading ? "Checking..." : "View My Data"}
+            </button>
+            <button
+              type="button"
+              className="text-blue-600 underline mt-2"
+              onClick={() => setStep("select")}
+            >
+              Back
+            </button>
+          </form>
+        )}
         {error && <div className="text-red-600 mb-2">{error}</div>}
         {success && <div className="text-green-600 mb-2">{success}</div>}
-        {data && !editMode && (
+        {step === "view" && data && !editMode && (
           <div className="space-y-2">
             <div className="flex justify-between mb-2">
               <span className="font-semibold text-blue-900">Your Data</span>
@@ -121,16 +185,18 @@ export default function StaffPage() {
                 <span className="text-black">{val ? String(val) : "N/A"}</span>
               </div>
             ))}
+            <button
+              type="button"
+              className="text-blue-600 underline mt-2"
+              onClick={() => setStep("select")}
+            >
+              Back
+            </button>
           </div>
         )}
         {editMode && editData && (
-          <form
-            onSubmit={handleEditSubmit}
-            className="space-y-2 mt-4"
-          >
-            <div className="font-semibold mb-2 text-blue-900">
-              Edit Your Data
-            </div>
+          <form onSubmit={handleEditSubmit} className="space-y-2 mt-4">
+            <div className="font-semibold mb-2 text-blue-900">Edit Your Data</div>
             {Object.entries(editData).map(([key, val], i) => (
               <div key={i} className="mb-2">
                 <label className="block text-blue-900 font-medium mb-1">
@@ -140,7 +206,7 @@ export default function StaffPage() {
                   className="w-full border px-3 py-2 rounded"
                   value={val ? String(val) : ""}
                   onChange={(e) => handleEditChange(key, e.target.value)}
-                  disabled={key === "PID"}
+                  disabled={key === "PID" || key === "Name of employee"}
                 />
               </div>
             ))}
