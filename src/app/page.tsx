@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
+import Footer from "@/components/Footer";
 
 type StaffRow = Record<string, string>;
 
@@ -14,6 +15,7 @@ export default function StaffPage() {
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [step, setStep] = useState<"select" | "pid" | "view">("select");
+  const [exited, setExited] = useState(false);
 
   useEffect(() => {
     // Fetch staff names on mount
@@ -105,12 +107,48 @@ export default function StaffPage() {
     setLoading(false);
   };
 
+  if (exited) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
+        <div className="w-full max-w-sm bg-white p-4 rounded shadow text-center">
+          <img
+            src="/logo.png"
+            alt="School Logo"
+            className="mx-auto mb-2 w-20 h-20 object-contain"
+          />
+          <h2 className="text-lg font-bold text-blue-900 mb-1">
+            GGSS Nishtar Road, Khi
+          </h2>
+          <h1 className="text-2xl font-bold text-blue-900 mb-4">Bye bye!</h1>
+          <p className="text-blue-700">
+            Thank you for using the Staff Data Lookup.
+          </p>
+        </div>
+        <Footer />
+      </main>
+    );
+  }
+
   return (
-    <main className="p-4 min-h-screen bg-gray-100 text-sm flex flex-col items-center justify-center">
-      <div className="max-w-md w-full bg-white p-6 rounded shadow">
-        <h1 className="text-xl font-bold text-center mb-6 text-blue-900">
+    <main className="min-h-screen flex flex-col items-center justify-between bg-gray-100">
+      <div className="w-full max-w-sm bg-white p-4 rounded shadow mt-2 mb-24">
+        <img
+          src="/logo.png"
+          alt="School Logo"
+          className="mx-auto mb-2 w-20 h-20 object-contain"
+        />
+        <h2 className="text-lg font-bold text-blue-900 mb-4 text-center">
+          GGSS Nishtar Road, Khi
+        </h2>
+        <h1 className="text-xl font-bold text-center mb-4 text-blue-900">
           Staff Data Lookup
         </h1>
+        {selectedName && step !== "select" && (
+          <div className="mb-4 text-center">
+            <span className="font-semibold text-blue-900">Selected Name: </span>
+            <span className="text-black">{selectedName}</span>
+          </div>
+        )}
         {step === "select" && (
           <form className="mb-4 flex flex-col gap-2">
             <label
@@ -132,6 +170,13 @@ export default function StaffPage() {
                 </option>
               ))}
             </select>
+            <button
+              type="button"
+              className="text-red-600 underline mt-2"
+              onClick={() => setExited(true)}
+            >
+              Exit
+            </button>
           </form>
         )}
         {step === "pid" && (
@@ -149,6 +194,7 @@ export default function StaffPage() {
               value={pid}
               onChange={(e) => setPid(e.target.value)}
               required
+              placeholder="Enter PID"
             />
             <button
               type="submit"
@@ -157,13 +203,22 @@ export default function StaffPage() {
             >
               {loading ? "Checking..." : "View My Data"}
             </button>
-            <button
-              type="button"
-              className="text-blue-600 underline mt-2"
-              onClick={() => setStep("select")}
-            >
-              Back
-            </button>
+            <div className="flex gap-2 mt-2">
+              <button
+                type="button"
+                className="text-blue-600 underline"
+                onClick={() => setStep("select")}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                className="text-red-600 underline"
+                onClick={() => setExited(true)}
+              >
+                Exit
+              </button>
+            </div>
           </form>
         )}
         {error && <div className="text-red-600 mb-2">{error}</div>}
@@ -186,13 +241,22 @@ export default function StaffPage() {
                 <span className="text-black">{val ? String(val) : "N/A"}</span>
               </div>
             ))}
-            <button
-              type="button"
-              className="text-blue-600 underline mt-2"
-              onClick={() => setStep("select")}
-            >
-              Back
-            </button>
+            <div className="flex gap-2 mt-2">
+              <button
+                type="button"
+                className="text-blue-600 underline"
+                onClick={() => setStep("select")}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                className="text-red-600 underline"
+                onClick={() => setExited(true)}
+              >
+                Exit
+              </button>
+            </div>
           </div>
         )}
         {editMode && editData && (
@@ -208,6 +272,7 @@ export default function StaffPage() {
                   value={val ? String(val) : ""}
                   onChange={(e) => handleEditChange(key, e.target.value)}
                   disabled={key === "PID" || key === "Name of employee"}
+                  placeholder={key}
                 />
               </div>
             ))}
@@ -225,10 +290,18 @@ export default function StaffPage() {
               >
                 Cancel
               </button>
+              <button
+                type="button"
+                className="text-red-600 underline"
+                onClick={() => setExited(true)}
+              >
+                Exit
+              </button>
             </div>
           </form>
         )}
       </div>
+      <Footer />
     </main>
   );
 }
