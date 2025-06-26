@@ -1,12 +1,14 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
+
+type StaffRow = Record<string, string>;
 
 export default function StaffPage() {
   const [pid, setPid] = useState("");
   const [staffList, setStaffList] = useState<string[]>([]);
   const [selectedName, setSelectedName] = useState("");
-  const [data, setData] = useState<any>(null);
-  const [editData, setEditData] = useState<any>(null);
+  const [data, setData] = useState<StaffRow | null>(null);
+  const [editData, setEditData] = useState<StaffRow | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,18 +20,18 @@ export default function StaffPage() {
     fetch("/api/staffdata")
       .then((res) => res.json())
       .then((json) => {
-        const rows = json.data;
+        const rows: string[][] = json.data;
         const header = rows[0];
         const nameIndex = header.indexOf("Name of employee");
         const names = rows
           .slice(1)
-          .map((row: any) => row[nameIndex])
+          .map((row) => row[nameIndex])
           .filter(Boolean);
         setStaffList(names);
       });
   }, []);
 
-  const handleNameSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleNameSelect = (e: ChangeEvent<HTMLSelectElement>) => {
     setSelectedName(e.target.value);
     setError("");
     setSuccess("");
@@ -40,7 +42,7 @@ export default function StaffPage() {
     if (e.target.value) setStep("pid");
   };
 
-  const handlePidSubmit = async (e: React.FormEvent) => {
+  const handlePidSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -51,13 +53,12 @@ export default function StaffPage() {
     try {
       const res = await fetch("/api/staffdata");
       const json = await res.json();
-      const rows = json.data;
+      const rows: string[][] = json.data;
       const header = rows[0];
       const nameIndex = header.indexOf("Name of employee");
       const pidIndex = header.indexOf("PID");
       const rowIndex = rows.findIndex(
-        (row: any) =>
-          row[nameIndex] === selectedName && row[pidIndex] === pid
+        (row) => row[nameIndex] === selectedName && row[pidIndex] === pid
       );
       if (rowIndex === -1) {
         setError("PID does not match for selected name.");
@@ -65,22 +66,22 @@ export default function StaffPage() {
         return;
       }
       const row = rows[rowIndex];
-      const rowObj: any = {};
-      header.forEach((col: string, i: number) => (rowObj[col] = row[i]));
+      const rowObj: StaffRow = {};
+      header.forEach((col, i) => (rowObj[col] = row[i]));
       setData(rowObj);
       setEditData({ ...rowObj });
       setStep("view");
-    } catch (err) {
+    } catch {
       setError("Failed to fetch data.");
     }
     setLoading(false);
   };
 
   const handleEditChange = (key: string, value: string) => {
-    setEditData({ ...editData, [key]: value });
+    if (editData) setEditData({ ...editData, [key]: value });
   };
 
-  const handleEditSubmit = async (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSuccess("");
     setError("");
@@ -98,7 +99,7 @@ export default function StaffPage() {
       } else {
         setError("Failed to update data.");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to update data.");
     }
     setLoading(false);
