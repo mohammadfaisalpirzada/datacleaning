@@ -11,9 +11,9 @@ export default function AdminDashboard() {
   const [editData, setEditData] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
   const [viewRow, setViewRow] = useState<number | null>(null);
   const editFormRef = useRef<HTMLFormElement | null>(null);
+  const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
     fetch("/api/staffdata")
@@ -44,7 +44,6 @@ export default function AdminDashboard() {
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
     setSuccess("");
     try {
@@ -65,7 +64,6 @@ export default function AdminDashboard() {
     } catch {
       setError("Failed to update data.");
     }
-    setLoading(false);
   };
 
   // For adding a new row (admin can add staff)
@@ -84,7 +82,6 @@ export default function AdminDashboard() {
   };
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
     setSuccess("");
     try {
@@ -106,12 +103,10 @@ export default function AdminDashboard() {
     } catch {
       setError("Failed to add staff.");
     }
-    setLoading(false);
   };
 
   const handleRemove = async (idx: number) => {
     if (!window.confirm('Are you sure you want to remove this staff record?')) return;
-    setLoading(true);
     setError("");
     setSuccess("");
     try {
@@ -130,7 +125,6 @@ export default function AdminDashboard() {
     } catch {
       setError("Failed to remove staff.");
     }
-    setLoading(false);
   };
 
   return (
@@ -215,11 +209,14 @@ export default function AdminDashboard() {
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div
               className="bg-white rounded shadow p-4 max-w-md w-full relative"
-              onTouchStart={e => (window._touchStartX = e.touches[0].clientX)}
+              onTouchStart={e => (touchStartX.current = e.touches[0].clientX)}
               onTouchEnd={e => {
-                const dx = e.changedTouches[0].clientX - window._touchStartX;
-                if (dx > 50 && viewRow > 1) setViewRow(viewRow - 1); // swipe right
-                if (dx < -50 && viewRow < staff.length - 1) setViewRow(viewRow + 1); // swipe left
+                if (touchStartX.current !== null) {
+                  const dx = e.changedTouches[0].clientX - touchStartX.current;
+                  if (dx > 50 && viewRow > 1) setViewRow(viewRow - 1); // swipe right
+                  if (dx < -50 && viewRow < staff.length - 1) setViewRow(viewRow + 1); // swipe left
+                  touchStartX.current = null;
+                }
               }}
             >
               <h2 className="text-lg font-bold mb-2 text-blue-900">Staff Details</h2>

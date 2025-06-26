@@ -3,7 +3,6 @@ import { google } from 'googleapis';
 import { JWT } from 'google-auth-library';
 
 const SHEET_ID = '1ogh77JsKGtrfdfBmxdhNZnAxz8-nhTLcYCCWtZXmDnE';
-const SHEET_NAME = 'Sheet1';
 
 function getAuth() {
   const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON!);
